@@ -1,5 +1,5 @@
 
-![SeSAMeStr_logo](SeSAMeStr_logo.jpg)
+![SeSAMeStr_logo](www/SeSAMeStr_logo.jpg)
 
 # SeSAMeStr
 
