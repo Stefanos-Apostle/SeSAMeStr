@@ -18,7 +18,7 @@ library(SeSAMeStr)
 
 
 ## Step 3: Create the Output directory Architecture
-
+"
 .
 ├── DML
 │   ├── DMR_Analysis
@@ -28,7 +28,7 @@ library(SeSAMeStr)
 │   └── Volcano_plots
 ├── PCA
 └── QC
-
+"
 
 ## Step 4: Run the SeSAMe_STREET() Function
 
