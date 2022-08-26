@@ -8,17 +8,19 @@ downstream analysis."
 
 ## Step 1: Install SeSAMeStr R-Package from Github
 
+```
 library(devtools)
 devtools::install_github("Stefanos-Apostle/SeSAMeStr")
 library(SeSAMeStr)
-
+```
 
 ## Step 2: Fill out the SeSAMe_STREET_Sample_Sheet
 ### Download from Github
 
 
 ## Step 3: Create the Output directory Architecture
-"
+
+```
 .
 ├── DML
 │   ├── DMR_Analysis
@@ -28,14 +30,16 @@ library(SeSAMeStr)
 │   └── Volcano_plots
 ├── PCA
 └── QC
-"
+```
 
 ## Step 4: Run the SeSAMe_STREET() Function
 
-SeSAMe_STREET(Idat_dir = "path_to/Idat_dir", \n
-              out_dir = "path_to/output", \n
-              sample_sheet = "path_to/SeSAMe_STREET_Sample_Sheet.xlsx", \n
-              prep = "TQCDPB", \n
-              formula = ~ Condition1 + Condition2 + ..., \n
-              subsample = NA, \n
-              cores = 4) \n
+```
+SeSAMe_STREET(Idat_dir = "path_to/Idat_dir",
+              out_dir = "path_to/output",
+              sample_sheet = "path_to/SeSAMe_STREET_Sample_Sheet.xlsx",
+              prep = "TQCDPB",
+              formula = ~ Condition1 + Condition2 + ...,
+              subsample = NA,
+              cores = 4)
+```
