@@ -48,3 +48,7 @@ SeSAMe_STREET(Idat_dir = "path_to/Idat_dir",
               subsample = NA,
               cores = 4)
 ```
+
+## Future Work
+
+This has been built primarily for the MM285 platform, but is prepared to be extended to other platforms as well. This will happen if a personal/lab project requires it or if there is of interest by others in this extension.
