@@ -1,10 +1,9 @@
 # SeSAMeStr
 
-
-"This pipeline is meant to act as a first pass analysis of DNA CpG Methylation using the SeSAMe R-Package.
+This pipeline is meant to act as a first pass analysis of DNA CpG Methylation using the SeSAMe R-Package.
 This will take care of Quality Control, PCA, and Basic DML analysis. All files and plots will be output to 
 output directory for ease of loading data back into R for either rerunning, replotting, or continuation of 
-downstream analysis."
+downstream analysis.
 
 ## Step 1: Install SeSAMeStr R-Package from Github
 
