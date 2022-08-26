@@ -17,7 +17,8 @@ library(SeSAMeStr)
 ```
 
 ## Step 2: Fill out the SeSAMe_STREET_Sample_Sheet
-### Download from Github
+
+Download from https://github.com/Stefanos-Apostle/SeSAMeStr/blob/main/SeSAMe_STREET_Sample_Sheet.xlsx
 
 
 ## Step 3: Create the Output directory Architecture
