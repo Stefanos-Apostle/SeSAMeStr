@@ -157,10 +157,11 @@ qual_metrics <- function(sdfs, prep, out_dir) {
 
   ## quality metrics
   qcs <- openSesame(sdfs, prep, func=sesameQC_calcStats, funs="detection")
-  qc_df <- head(do.call(rbind, lapply(qcs, as.data.frame)))
 
+  ## this crashes so I removed the output for now, will fix this later
+  #qc_df <- head(do.call(rbind, lapply(qcs, as.data.frame)))
   out_file = paste(out_dir, "/QC/quality_metics.csv", sep = "")
-  write_csv(x = qc_df, file = out_file)
+  #write_csv(x = qc_df, file = out_file)
 
 
   ## ranked quality metrics
