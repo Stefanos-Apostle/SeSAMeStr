@@ -640,45 +640,49 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
   DML_CpGs <- rownames(test_result)[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
 
-  DML_betas <- betas[which(rownames(betas) %in% DML_CpGs), ]
+  if (length(DML_CpGs) == 0) {
+    message(paste("The following comparison has 0 DMLs; ", DML_colname, sep = ""))
+  }else{
+    DML_betas <- betas[which(rownames(betas) %in% DML_CpGs), ]
 
-  ## custom heatmap
-  hm_colors <- colorRampPalette(colors = c("dark blue","blue", "cyan", "green","yellow", "red", "dark red"))(1000)
+    ## custom heatmap
+    hm_colors <- colorRampPalette(colors = c("dark blue","blue", "cyan", "green","yellow", "red", "dark red"))(1000)
 
-  match_ss <- match(colnames(DML_betas), unlist(sample_sheet_df[, 2]))
-  mat_row <- data.frame(Condition = factor(unlist(sample_sheet_df[, grep(CONDITION, colnames(sample_sheet_df))[1]])[match_ss]))
-  rownames(mat_row) <- unlist(sample_sheet_df[,2])[match_ss]
+    match_ss <- match(colnames(DML_betas), unlist(sample_sheet_df[, 2]))
+    mat_row <- data.frame(Condition = factor(unlist(sample_sheet_df[, grep(CONDITION, colnames(sample_sheet_df))[1]])[match_ss]))
+    rownames(mat_row) <- unlist(sample_sheet_df[,2])[match_ss]
 
-  lc <- levels(mat_row$Condition)
-  row_colors <-  RColorBrewer::brewer.pal(length(lc), "Dark2")
-  cond_array <- c()
-  for (i in c(1:length(lc))) {
-    ta <- row_colors[i]
-    names(ta) <- lc[i]
-    cond_array <- c(cond_array, ta)
+    lc <- levels(mat_row$Condition)
+    row_colors <-  RColorBrewer::brewer.pal(length(lc), "Dark2")
+    cond_array <- c()
+    for (i in c(1:length(lc))) {
+      ta <- row_colors[i]
+      names(ta) <- lc[i]
+      cond_array <- c(cond_array, ta)
+    }
+    ann_cols <- list(Condition = cond_array)
+
+
+    ## raw betas
+    out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_heatmap.pdf", sep = "")
+    pdf(out_file)
+    plot <- pheatmap(t(DML_betas), color = hm_colors, annotation_row = mat_row, annotation_colors = ann_cols,
+                     cluster_rows = T, cluster_cols = T, show_colnames = F, show_rownames = T, #cellwidth = .15, cellheight = 10,
+                     annotation_names_row = F, fontsize = 5)
+    print(plot)
+    dev.off()
+
+
+    ## z score betas
+    out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_zscore_heatmap.pdf", sep = "")
+    pdf(out_file)
+    is.na(DML_betas) %>% table()
+    plot <- pheatmap(t(MatVar(DML_betas)), annotation_row = mat_row, annotation_colors = ann_cols,
+                     cluster_rows = T, cluster_cols = T, show_colnames = F, show_rownames = T, #cellwidth = .15, cellheight = 10,
+                     annotation_names_row = F, fontsize = 5)
+    print(plot)
+    dev.off()
   }
-  ann_cols <- list(Condition = cond_array)
-
-
-  ## raw betas
-  out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_heatmap.pdf", sep = "")
-  pdf(out_file)
-  plot <- pheatmap(t(DML_betas), color = hm_colors, annotation_row = mat_row, annotation_colors = ann_cols,
-                   cluster_rows = T, cluster_cols = T, show_colnames = F, show_rownames = T, #cellwidth = .15, cellheight = 10,
-                   annotation_names_row = F, fontsize = 5)
-  print(plot)
-  dev.off()
-
-
-  ## z score betas
-  out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_zscore_heatmap.pdf", sep = "")
-  pdf(out_file)
-  plot <- pheatmap(t(MatVar(DML_betas)), annotation_row = mat_row, annotation_colors = ann_cols,
-                   cluster_rows = T, cluster_cols = T, show_colnames = F, show_rownames = T, #cellwidth = .15, cellheight = 10,
-                   annotation_names_row = F, fontsize = 5)
-  print(plot)
-  dev.off()
-
 }
 
 
@@ -875,6 +879,9 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir) {
 
       CONDITION = i
       LEVEL = k
+
+      ls <- strsplit(LEVEL, " |-")[[1]]
+      if (length(ls) > 0) {LEVEL <- paste(ls, collapse = ".")}
 
       ## running analysis for each CONDITION-LEVEL Subsets
       test_result <- condLEVEL_DMLs(test_result, CONDITION, LEVEL)
