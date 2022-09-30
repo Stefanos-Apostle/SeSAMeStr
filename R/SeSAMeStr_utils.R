@@ -865,8 +865,7 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir) {
   test_result <- summaryExtractTest(smry)
   test_result <- remove_NAs(test_result)
 
-  f <- as.character(formula[[2]])
-  f <- if (length(which(f == "+")) > 0) {f[-which(f == "+")]}else{f}
+  f <- all.vars(formula[[2]])
 
   ## loop to generate DML for conditionLEVEL plots and output
   for (i in f) {
