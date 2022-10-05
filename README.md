@@ -1,7 +1,7 @@
 
 ![SeSAMeStr_logo](www/SeSAMeStr_logo.jpg)
 
-![Fig1](www/figure1.png)
+![Fig1](www/figure1.tiff)
 
 # SeSAMeStr
 
