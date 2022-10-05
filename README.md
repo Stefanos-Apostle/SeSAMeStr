@@ -3,7 +3,7 @@
 
 ![Fig1](www/figure1.jpg)
 
-SeSAMeStr Pipeline workflow. (A) Function and input requirements to run the pipeline. (B) Output directory structure with populated results. (C) Key QC figures generated in the preprocessing step (Detection rate, SNP allele frequency heatmap, Red-Green QQ Plot, Intensity Plot). (D) Figures generated during the PCA analysis based on input formula. (E) Key figures generated from DML analysis step based on input formula (Volcano plot, heatmap of significant CpG’s, GO Enrichment, Test Set Enrichment). ![image](https://user-images.githubusercontent.com/54689462/194160417-759e8292-96c4-4e2a-bcd0-be133edd5258.png)
+SeSAMeStr Pipeline workflow. (A) Function and input requirements to run the pipeline. (B) Output directory structure with populated results. (C) Key QC figures generated in the preprocessing step (Detection rate, SNP allele frequency heatmap, Red-Green QQ Plot, Intensity Plot). (D) Figures generated during the PCA analysis based on input formula. (E) Key figures generated from DML analysis step based on input formula (Volcano plot, heatmap of significant CpG’s, GO Enrichment, Test Set Enrichment).
 
 # SeSAMeStr
 
