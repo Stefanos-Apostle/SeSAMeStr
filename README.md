@@ -1,6 +1,8 @@
 
 ![SeSAMeStr_logo](www/SeSAMeStr_logo.jpg)
 
+![Fig1](www/figure1.png)
+
 # SeSAMeStr
 
 This pipeline is meant to act as a first pass analysis of DNA CpG Methylation using the SeSAMe R-Package.
