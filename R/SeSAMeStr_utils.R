@@ -276,7 +276,7 @@ extra_SNP_freq <- function(sdfs, out_dir) {
 #' all_inferedspecies(sdfs, "output)
 #' @export
 all_inferedspecies <- function(sdfs, out_dir) {
-
+  message("Running infered species...")
   infspec <- unlist(lapply(c(1:length(sdfs)), function(X){inferSpecies(sdfs[[X]], return.species = TRUE)}))
 
   infspec_list <- list()
@@ -288,7 +288,7 @@ all_inferedspecies <- function(sdfs, out_dir) {
   names(infspec_list) <- unique(names(infspec))
 
   out_file <- paste(out_dir, "/QC/Infered_Species.csv", sep = "")
-  write_csv(as.data.frame(infspec_list), file = out_file)
+  write_csv(as.data.frame(unlist(infspec_list)), file = out_file)
 }
 
 #' Model Infered Strains
@@ -302,7 +302,7 @@ all_inferedspecies <- function(sdfs, out_dir) {
 #' plot_inferedstrains(sdfs, "output)
 #' @export
 plot_inferedstrains <- function(sdf, out_dir) {
-
+  message("Running infered strains...")
   infstr <- data.frame()
   for (i in c(1:length(sdf))) {
     p = inferStrain(sdf[[i]], return.probability = TRUE)
