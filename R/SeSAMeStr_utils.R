@@ -288,7 +288,8 @@ all_inferedspecies <- function(sdfs, out_dir) {
   names(infspec_list) <- unique(names(infspec))
 
   out_file <- paste(out_dir, "/QC/Infered_Species.csv", sep = "")
-  write_csv(as.data.frame(unlist(infspec_list)), file = out_file)
+  arw <- paste(names(infspec_list), (infspec_list), sep = ": ")
+  write_csv(as.data.frame(arw), file = out_file)
 }
 
 #' Model Infered Strains
@@ -645,6 +646,11 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
   }else{
     DML_betas <- betas[which(rownames(betas) %in% DML_CpGs), ]
 
+    if (nrow(DML_betas) > 65500) {
+      DML_betas <- DML_betas[sample(1:nrow(DML_betas), 65500),]
+      message(">65500 DMLs, reducing number to 65500 DMLs for heatmap plotting")
+    }
+
     ## custom heatmap
     hm_colors <- colorRampPalette(colors = c("dark blue","blue", "cyan", "green","yellow", "red", "dark red"))(1000)
 
@@ -661,6 +667,7 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
       cond_array <- c(cond_array, ta)
     }
     ann_cols <- list(Condition = cond_array)
+
 
 
     ## raw betas
@@ -865,6 +872,9 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir) {
   test_result <- summaryExtractTest(smry)
   test_result <- remove_NAs(test_result)
 
+  out_file <- paste(out_dir, "/DML/test_result.RData", sep = "")
+  save(test_result, file = out_file)
+
   f <- all.vars(formula[[2]])
 
   ## loop to generate DML for conditionLEVEL plots and output
@@ -894,10 +904,6 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir) {
 
     }
   }
-
-  out_file <- paste(out_dir, "/DML/test_result.RData", sep = "")
-  save(test_result, file = out_file)
-
 }
 
 
