@@ -538,7 +538,7 @@ run_DML <- function(betas, sample_sheet_df, formula, cores, out_dir) {
 
   se <- create_SE(betas, sample_sheet_df, formula)
   message("Running DML...")
-  smry <- DML(se, formula, mc.cores = cores)
+  smry <- DML(se, formula, BPPARAM = MulticoreParam(workers = cores))
 
   out_file <- paste(out_dir, "/DML/smry.RData", sep = "")
   save(smry, file = out_file)
