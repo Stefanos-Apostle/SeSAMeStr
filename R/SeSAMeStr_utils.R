@@ -712,7 +712,7 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
 testEnrichment_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
 
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
-  DML_CpGs <- rownames(test_result)[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
+  DML_CpGs <- test_result$Probe_ID[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
 
   tE_results <- testEnrichment(DML_CpGs)
 
@@ -780,8 +780,8 @@ GO_analysis_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
 
   ## Running GO on Up and Down regulated CpGs independantly
-  up_DML <- rownames(test_result)[which(test_result[[DML_colname]] == "Up")]
-  down_DML <- rownames(test_result)[which(test_result[[DML_colname]] == "Down")]
+  up_DML <- test_result$Probe_ID[which(test_result[[DML_colname]] == "Up")]
+  down_DML <- test_result$Probe_ID[which(test_result[[DML_colname]] == "Down")]
 
   genes_up <- sesameData_getGenesByProbes(up_DML)
   genes_down <- sesameData_getGenesByProbes(down_DML)
