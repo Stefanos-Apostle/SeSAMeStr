@@ -639,7 +639,7 @@ volcano_plot <- function(test_result, CONDITION, LEVEL, out_dir) {
 heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, out_dir) {
 
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
-  DML_CpGs <- rownames(test_result)[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
+  DML_CpGs <- test_result$Probe_ID[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
 
   if (length(DML_CpGs) == 0) {
     message(paste("The following comparison has 0 DMLs; ", DML_colname, sep = ""))
@@ -659,7 +659,12 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
     rownames(mat_row) <- unlist(sample_sheet_df[,2])[match_ss]
 
     lc <- levels(mat_row$Condition)
-    row_colors <-  RColorBrewer::brewer.pal(length(lc), "Dark2")
+    if (length(lc) <= 8) {
+      row_colors <-  RColorBrewer::brewer.pal(length(lc), "Dark2")  
+    }else{
+      row_colors <- rainbow(length(lc))
+    }
+    
     cond_array <- c()
     for (i in c(1:length(lc))) {
       ta <- row_colors[i]
