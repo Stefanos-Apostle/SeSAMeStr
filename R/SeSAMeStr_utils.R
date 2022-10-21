@@ -565,23 +565,32 @@ run_DML <- function(betas, sample_sheet_df, formula, cores, out_dir) {
 #' @export
 condLEVEL_DMLs <- function(test_result, CONDITION, LEVEL, pval = 0.05, effSize = 0.05) {
 
-  pval_col <- which(colnames(test_result) == paste("Pval_", CONDITION, LEVEL, sep = ""))
-  est_col <- which(colnames(test_result) == paste("Est_", CONDITION, LEVEL, sep = ""))
-  eff_col <- which(colnames(test_result) == paste("Eff_", CONDITION, sep = ""))
+  pval_name <- paste("Pval_", CONDITION, LEVEL, sep = "")
+  pval_col <- which(colnames(test_result) == pval_name)
 
-  DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
+  est_name <- paste("Est_", CONDITION, LEVEL, sep = "")
+  est_col <- which(colnames(test_result) == est_name)
 
-  test_result[, DML_colname] <- ifelse(test_result[, pval_col] <= 0.05,
-                                       ifelse(test_result[, eff_col] > .05,
-                                              ifelse(test_result[, est_col] > 0, "Up", "Down"),
-                                              "Non Sig"),
-                                       "Non Sig")
-  #if (length(unique(test_result[[DML_colname]])) == 3) {
-  #  test_result[[DML_colname]] <- factor(test_result[[DML_colname]], levels = c("Non Sig", "Up", "Down"))
-  #}else{
-  #  test_result[[DML_colname]] <- test_result[[DML_colname]]
-  #}
-  test_result[[DML_colname]] <- factor(test_result[[DML_colname]], levels = c("Non Sig", "Up", "Down"))
+  eff_name <- paste("Eff_", CONDITION, sep = "")
+  eff_col <- which(colnames(test_result) == eff_name)
+
+  if (length(pval_col) == 0 | length(est_col) == 0) {
+    test_result <- c(CONDITION, LEVEL)
+  }else{
+    DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
+
+    test_result[, DML_colname] <- ifelse(test_result[, pval_col] <= 0.05,
+                                         ifelse(test_result[, eff_col] > .05,
+                                                ifelse(test_result[, est_col] > 0, "Up", "Down"),
+                                                "Non Sig"),
+                                         "Non Sig")
+    #if (length(unique(test_result[[DML_colname]])) == 3) {
+    #  test_result[[DML_colname]] <- factor(test_result[[DML_colname]], levels = c("Non Sig", "Up", "Down"))
+    #}else{
+    #  test_result[[DML_colname]] <- test_result[[DML_colname]]
+    #}
+    test_result[[DML_colname]] <- factor(test_result[[DML_colname]], levels = c("Non Sig", "Up", "Down"))
+  }
 
   return(test_result)
 
@@ -660,11 +669,11 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
 
     lc <- levels(mat_row$Condition)
     if (length(lc) <= 8) {
-      row_colors <-  RColorBrewer::brewer.pal(length(lc), "Dark2")  
+      row_colors <-  RColorBrewer::brewer.pal(length(lc), "Dark2")
     }else{
       row_colors <- rainbow(length(lc))
     }
-    
+
     cond_array <- c()
     for (i in c(1:length(lc))) {
       ta <- row_colors[i]
@@ -868,11 +877,13 @@ DMR_DMLs <- function(se, smry, CONDITION, LEVEL, out_dir) {
 #' @param smry Summary statistics of DML run
 #' @param formula Formula that will be used for DML
 #' @param out_dir Path to output directory
+#' @param pval P value threshold for significant CpG DMLs
+#' @param effSize Effect size threshold for signficant CpG DMLs
 #' @return Saving the updated test_result object now containing Up, Down, not-sig DML results for each comparison
 #' @examples
 #' DML_analysis(betas, sample_sheet_df, smry, ~Group, "path/out_dir")
 #' @export
-DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir) {
+DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize) {
 
   test_result <- summaryExtractTest(smry)
   test_result <- remove_NAs(test_result)
@@ -898,15 +909,19 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir) {
       if (length(ls) > 0) {LEVEL <- paste(ls, collapse = ".")}
 
       ## running analysis for each CONDITION-LEVEL Subsets
-      test_result <- condLEVEL_DMLs(test_result, CONDITION, LEVEL)
-      volcano_plot(test_result, CONDITION, LEVEL, out_dir)
-      heatmap_DMLs(betas, sample_sheet_df, test_result, CONDITION, LEVEL, out_dir)
-      testEnrichment_DMLs(test_result, CONDITION, LEVEL, out_dir)
-      GO_analysis_DMLs(test_result, CONDITION, LEVEL, out_dir)
+      cond_test_result <- condLEVEL_DMLs(test_result, CONDITION, LEVEL, pval = pval, effSize = effSize)
 
-      se <- create_SE(betas, sample_sheet_df, formula)
-      DMR_DMLs(se, smry, CONDITION, LEVEL, out_dir)
+      if (length(cond_test_result) == 2 && class(cond_test_result[1]) == "character") {
+        warning(paste("The following DML comparison not found in the test results; ", paste(cond_test_result, collapse = " "), sep = ""))
+      }else{
+        volcano_plot(cond_test_result, CONDITION, LEVEL, out_dir)
+        heatmap_DMLs(betas, sample_sheet_df, cond_test_result, CONDITION, LEVEL, out_dir)
+        testEnrichment_DMLs(cond_test_result, CONDITION, LEVEL, out_dir)
+        GO_analysis_DMLs(cond_test_result, CONDITION, LEVEL, out_dir)
 
+        se <- create_SE(betas, sample_sheet_df, formula)
+        DMR_DMLs(se, smry, CONDITION, LEVEL, out_dir)
+      }
     }
   }
 }
@@ -929,11 +944,13 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir) {
 #' @param formula Formula for DML calculation
 #' @param cores Number of cores to run DML summary stats calculation
 #' @param subsample Number of beta values to use for DML calc and analysis for test runs (leave blank for full scale run)
+#' @param pval P value threshold for significant CpG DMLs
+#' @param effSize Effect size threshold for signficant CpG DMLs
 #' @return All outputs in or a sub directory of the out_dir
 #' @examples
 #' SeSAMe_STREET("path/Idat_dir", "path/out_dir", "path/sample_sheet.xlsx", "TQCDPB", ~ Group, 16, NA)
 #' @export
-SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA) {
+SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1) {
 
   ## sinking output to a log file
   log_file <- paste(out_dir, "/SeSAMe_STREET_log.txt", sep = "")
@@ -971,7 +988,7 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
 
   ## First pass of basic analysis on DML summary statistics
   message("Running DML analysis")
-  DML_analysis(betas, sample_sheet_df, smry, formula, out_dir)
+  DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize)
 
   ## closing sink log
   #sink()
