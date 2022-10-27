@@ -954,7 +954,7 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
 
   ## sinking output to a log file
   log_file <- paste(out_dir, "/SeSAMe_STREET_log.txt", sep = "")
-  #sink(log_file, append = F)
+  sink(log_file, append = F)
 
   ## unit test for output architecture
   test_output_architecture(out_dir)
@@ -991,7 +991,7 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
   DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize)
 
   ## closing sink log
-  #sink()
+  sink()
   ##closeAllConnections()
 }
 
