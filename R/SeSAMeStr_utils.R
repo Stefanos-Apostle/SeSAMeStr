@@ -12,14 +12,18 @@
 remove_NAs <- function(test_result) {
   remove <- c()
   for (i in c(1:ncol(test_result))) {
-    t <- which(is.na(test_result[, i]))
-    remove <- c(remove, t)
+    if (length(grep("FPval", colnames(test_result)[i])) == 0) {
+      t <- which(is.na(test_result[, i]))
+      remove <- c(remove, t)
+    }
   }
 
   if (length(remove) > 0) {
     test_result <- test_result[-remove, ]
   }
   print(paste(length(remove), "NA CpGs removed from test result."))
+  print(paste("Final test_result dimensions (", paste(dim(test_result), collapse = ","), ")", sep = ""))
+
   return(test_result)
 }
 
@@ -891,6 +895,10 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = 
   out_file <- paste(out_dir, "/DML/test_result.RData", sep = "")
   save(test_result, file = out_file)
 
+  if (nrow(test_result) == 0) {
+    stop("Problem in test results, NAs present in comparisons, please check the test_result.Rdata object to identify problem")
+  }
+
   f <- all.vars(formula[[2]])
 
   ## loop to generate DML for conditionLEVEL plots and output
@@ -954,7 +962,7 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
 
   ## sinking output to a log file
   log_file <- paste(out_dir, "/SeSAMe_STREET_log.txt", sep = "")
-  #sink(log_file, append = F)
+  sink(log_file, append = F)
 
   ## unit test for output architecture
   test_output_architecture(out_dir)
@@ -991,7 +999,7 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
   DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize)
 
   ## closing sink log
-  #sink()
+  sink()
   ##closeAllConnections()
 }
 
