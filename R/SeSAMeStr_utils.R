@@ -583,8 +583,8 @@ condLEVEL_DMLs <- function(test_result, CONDITION, LEVEL, pval = 0.05, effSize =
   }else{
     DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
 
-    test_result[, DML_colname] <- ifelse(test_result[, pval_col] <= 0.05,
-                                         ifelse(test_result[, eff_col] > .05,
+    test_result[, DML_colname] <- ifelse(test_result[, pval_col] <= pval,
+                                         ifelse(test_result[, eff_col] > effSize,
                                                 ifelse(test_result[, est_col] > 0, "Up", "Down"),
                                                 "Non Sig"),
                                          "Non Sig")
