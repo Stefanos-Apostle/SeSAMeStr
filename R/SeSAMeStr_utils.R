@@ -263,10 +263,22 @@ extra_SNP_freq <- function(sdfs, out_dir) {
 
   out_file <- paste(out_dir, "/QC/extra_SNP_allele_freq.pdf", sep = "")
   pdf(file = out_file)
-  plot <- sesameQC_plotHeatSNPs(sdfs)
-  print(plot)
-  dev.off()
 
+
+  afs <- openSesame(sdfs, func = getAFs, mask = FALSE)
+  afs <- both.cluster(afs)$mat
+  rg <- apply(afs, 1, function(x) {
+    max(x, na.rm = TRUE) - min(x, na.rm = TRUE)
+  })
+  afs <- afs[rg > 0.3, ]
+
+  if (nrow(afs) > 0) {
+    plot <- sesameQC_plotHeatSNPs(sdfs)
+    print(plot)
+  }else{
+    warning("nrow(afs) == 0; skipping extra SNP freq heatmap")
+  }
+  dev.off()
 }
 
 #' @title Model Infered Species
