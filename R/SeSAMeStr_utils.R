@@ -966,13 +966,21 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = 
 #' @param subsample Number of beta values to use for DML calc and analysis for test runs (leave blank for full scale run)
 #' @param pval P value threshold for significant CpG DMLs
 #' @param effSize Effect size threshold for signficant CpG DMLs
-#' @param restart_at_DMLanalysis Option to run only the DML analysis in the case that an error occurred during this step
+#' @param pipeline_alacarte Option to choose which steps of the pipeline to run. Must include a selection of only the following; c("QC", "PCA", "DML")
 #' @return All outputs in or a sub directory of the out_dir
 #' @examples
 #' SeSAMe_STREET("path/Idat_dir", "path/out_dir", "path/sample_sheet.xlsx", "TQCDPB", ~ Group, 16, NA)
 #' @export
-SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1, restart_at_DMLanalysis = F) {
+SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1, pipeline_alacarte = c("QC", "PCA", "DML")) {
 
+  for (order in pipeline_alacarte) {
+    if (length(pipeline_alacarte) == 0) {
+      stop("pipeline_alacarte must be atleast one step secected. Please select from the following menu; c('QC', 'PCA', 'DML')")
+    }
+    if (!(order %in% c("QC", "PCA", "DML"))) {
+      stop(paste("The following value is not allowed in pipeline_alacarte; '", order,"'. Please select from the following menu; c('QC', 'PCA', 'DML')", sep = ""))
+    }
+  }
 
   ## sinking output to a log file
   log_file <- paste(out_dir, "/SeSAMe_STREET_log.txt", sep = "")
@@ -985,37 +993,49 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
   message("Loading in sample sheet")
   sample_sheet_df <- SS_samplesheet(sample_sheet)
 
-  if (restart_at_DMLanalysis == F) {
+  if ("QC" %in% pipeline_alacarte) {
     ## Preprocessing and QC analysis
     message("Running QC")
     run_QC(Idat_dir, prep, out_dir)
+  }
 
-    ## Calculating beta values
+  ## Calculating beta values
+  if ("betas.RData" %in% list.files(paste(out_dir, "/DML", sep = ""))) {
+    message("Loading in betas.RData")
+    load(paste(out_dir, "/DML/betas.RData", sep = ""))
+  }else{
     message("Calculating beta values")
     betas <- get_betas(Idat_dir, prep)
     out_file <- paste(out_dir, "/DML/betas.RData", sep = "")
     save(betas, file = out_file)
+  }
 
+  if ("PCA" %in% pipeline_alacarte) {
     ## PCA analysis
     message("Running PCA")
     run_PCA(betas, sample_sheet_df, formula, out_dir)
-
-    ## Calculating summary stats
-    message("Calculating summary statistics")
-
-    if (!(is.na(subsample))) {
-      betas <- betas[c(1:subsample), ]
-    }
-
-    smry <- run_DML(betas, sample_sheet_df, formula, cores, out_dir)
-  }else{
-    load(paste(out_dir, "/DML/betas.RData", sep = ""))
-    load(paste(out_dir, "/DML/smry.RData", sep = ""))
   }
 
-  ## First pass of basic analysis on DML summary statistics
-  message("Running DML analysis")
-  DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize)
+  ## Calculating summary stats
+  message("Calculating summary statistics")
+
+  if (!(is.na(subsample))) {
+    betas <- betas[c(1:subsample), ]
+  }
+
+  if ("DML" %in% pipeline_alacarte) {
+    if ("smry.RData" %in% list.files(paste(out_dir, "/DML", sep = ""))) {
+      message("Loading in smry.RData")
+      load(paste(out_dir, "/DML/smry.RData", sep = ""))
+    }else{
+      message("Calculating summary statistics")
+      smry <- run_DML(betas, sample_sheet_df, formula, cores, out_dir)
+    }
+
+    ## First pass of basic analysis on DML summary statistics
+    message("Running DML analysis")
+    DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize)
+  }
 
   ## closing sink log
   sink()
