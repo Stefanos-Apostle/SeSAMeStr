@@ -95,8 +95,6 @@ test_output_architecture <- function(out_dir) {
 
 ##### Read in data and preprocessing #####
 
-
-
 #' @title Read in Sample Sheet
 #'
 #' @description Function to read in the provided SeSAMe STREET sample sheet in the correct formatting
@@ -443,6 +441,102 @@ plot_PCA <- function(pca, condition, sample_sheet_df) {
 }
 
 
+#' @title Calulate tSNE data frame
+#'
+#' @description Function to calculate tSNE1 and 2 for the beta values by sample
+#' @param betas Beta values matrix
+#' @param perplexity Set to default of Rtsne; 30, but a test is set in place in case this is too high
+#' @return data frame of tSNE1 and 2 with rownames set to sample names
+#' @examples
+#' calc_tSNE(betas)
+#' @export
+calc_tSNE <- function(betas, perplexity = 30) {
+
+  ppl <- floor((nrow(t(betas)) - 1) / 3)
+  if (perplexity > ppl) {
+    message(paste("Perplexity is set too high, adjusting to highest allowed; ", ppl, sep = ""))
+    perplexity = ppl
+  }
+
+  set.seed(1)
+  tSNE_dims <- Rtsne(t(betas), perplexity = perplexity)
+  tSNE_df <- as.data.frame(tSNE_dims$Y)
+  rownames(tSNE_df) <- colnames(betas)
+
+  return(tSNE_df)
+}
+
+
+#' @title Plot tSNE
+#'
+#' @description Function to plot tSNE1 and 2 from calcualted tSNE data frame
+#' @param tSNE_df Data frame of tSNE1 and 2 with sample names as rownames (output of calc_tSNE)
+#' @param condition Character value of a condition name which can be linked to a sample sheet column for coloring of the replicates by the levels of that condition
+#' @param sample_sheet_df Dataframe of read in sample sheet
+#' @return GGplot2 formatted dotplot of tSNE1 and 2 colored by condition variables
+#' @examples
+#' plot_tSNE(tSNE_df, "Group", sample_sheet_df)
+#' @export
+plot_tSNE <- function(tSNE_df, condition, sample_sheet_df) {
+
+  #if (!(condition %in% colnames(sample_sheet_df))) {
+  #  stop(paste("condition", condition, "not found in colnames(sample_sheet_df)"))
+  #}
+  tSNE_df$condition <- sample_sheet_df[[condition]][match(rownames(tSNE_df), sample_sheet_df$Sample_Name)]
+
+  tSNE_plot <- ggplot(tSNE_df, aes(x=V1,y=V2,color=condition))+
+    geom_point()+
+    ylab("tSNE2") + xlab("tSNE1")+
+    theme_classic() +
+    theme(legend.position = "right", aspect.ratio = 1, text = element_text(face = "bold", size = 15),
+          axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
+
+  return(tSNE_plot)
+}
+
+#' @title Calculate UMAP
+#'
+#' @description Function to calculate UMASP embeddings of samples from betas matrix
+#' @param betas matrix of beta values
+#' @return Data frame of UMAP1 and 2
+#' @examples
+#' calc_UMAP(betas)
+#' @export
+calc_UMAP <- function(betas) {
+  set.seed(1)
+  UMAP <- umap(t(betas))
+  UMAP_df <- as.data.frame(UMAP$layout)
+
+  return(UMAP_df)
+}
+
+#' @title Plot UMAP
+#'
+#' @description Function to plot UMAP1 and 2 from calcualted tSNE data frame
+#' @param UMAP_df Data frame of UMAP1 and 2 with sample names as rownames (output of calc_UMAP)
+#' @param condition Character value of a condition name which can be linked to a sample sheet column for coloring of the replicates by the levels of that condition
+#' @param sample_sheet_df Dataframe of read in sample sheet
+#' @return GGplot2 formatted dotplot of UMAP1 and 2 colored by condition variables
+#' @examples
+#' plot_UMAP(UMAP_df, "Group", sample_sheet_df)
+#' @export
+plot_UMAP <- function(UMAP_df, condition, sample_sheet_df) {
+  UMAP_df$condition <- sample_sheet_df[[condition]][match(rownames(UMAP_df), sample_sheet_df$Sample_Name)]
+
+  UMAP_plot <- ggplot(UMAP_df, aes(x=V1,y=V2,color=condition))+
+    geom_point()+
+    ylab("UMAP2") + xlab("UMAP1")+
+    theme_classic() +
+    theme(legend.position = "right", aspect.ratio = 1, text = element_text(face = "bold", size = 15),
+          axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
+
+  return(UMAP_plot)
+}
+
+
+
+
+
 
 
 #' @title PCA Subassembly
@@ -452,17 +546,25 @@ plot_PCA <- function(pca, condition, sample_sheet_df) {
 #' @param sample_sheet_df Data frame of read in sample sheet
 #' @param formula Formula that will be used for DML, but is also used to select columns to color PCA for
 #' @param out_dir Path to output directory
+#' @param perplexity Value to use for tSNE perplexity
 #' @return Files and plots saved in the /PCA subdir
 #' @examples
 #' run_PCA(betas, sample_sheet_df, ~ Group, "path/out_dir")
 #' @export
-run_PCA <- function(betas, sample_sheet_df, formula, out_dir) {
+run_PCA <- function(betas, sample_sheet_df, formula, out_dir, perplexity) {
 
   pca <- prcomp(t(betas))
 
   message("Plotting PC proportion of variance...")
   PCA_variance_plot(pca, out_dir)
 
+  out_file <- paste(out_dir, "/PCA/tSNE_df.RData", sep = "")
+  tSNE_df <- calc_tSNE(betas, perplexity = perplexity)
+  save(tSNE_df, file = out_file)
+
+  out_file <- paste(out_dir, "/PCA/UMAP_df.RData", sep = "")
+  UMAP_df <- calc_UMAP(betas, perplexity = perplexity)
+  save(UMAP_df, file = out_file)
 
   message("Plotting PCs by Sample Sheet Condition...")
   #conds <- strsplit(as.character(formula)[2], " + ")[[1]]
@@ -472,13 +574,25 @@ run_PCA <- function(betas, sample_sheet_df, formula, out_dir) {
     ## unit test for condition presence
     test_condition_presence(i, sample_sheet_df)
 
-    #dev.new()
+    #pca plot
     out_file <- paste(out_dir, "/PCA/PCA_", i, ".pdf", sep = "")
     pdf(out_file)
-
     plot <- plot_PCA(pca, condition = i, sample_sheet_df)
     print(plot)
+    dev.off()
 
+    #tSNE plot
+    out_file <- paste(out_dir, "/PCA/tSNE_", i, ".pdf", sep = "")
+    pdf(out_file)
+    plot <- plot_tSNE(tSNE_df, condition = i, sample_sheet_df)
+    print(plot)
+    dev.off()
+
+    #UMAP PLOT
+    out_file <- paste(out_dir, "/PCA/UMAP_", i, ".pdf", sep = "")
+    pdf(out_file)
+    plot <- plot_UMAP(UMAP_df, condition = i, sample_sheet_df)
+    print(plot)
     dev.off()
     #ggsave(filename = out_file, plot = plot, device = NULL)
   }
@@ -489,8 +603,6 @@ run_PCA <- function(betas, sample_sheet_df, formula, out_dir) {
   save(pca, file = out_file)
 
 }
-
-
 
 
 ##### DML #####
@@ -967,11 +1079,12 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = 
 #' @param pval P value threshold for significant CpG DMLs
 #' @param effSize Effect size threshold for signficant CpG DMLs
 #' @param pipeline_alacarte Option to choose which steps of the pipeline to run. Must include a selection of only the following; c("QC", "PCA", "DML")
+#' @param perplexity Value to be used for tSNE of beta values in run_PCA subassembly
 #' @return All outputs in or a sub directory of the out_dir
 #' @examples
 #' SeSAMe_STREET("path/Idat_dir", "path/out_dir", "path/sample_sheet.xlsx", "TQCDPB", ~ Group, 16, NA)
 #' @export
-SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1, pipeline_alacarte = c("QC", "PCA", "DML")) {
+SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1, perplexity = 30, pipeline_alacarte = c("QC", "PCA", "DML")) {
 
   for (order in pipeline_alacarte) {
     if (length(pipeline_alacarte) == 0) {
@@ -1013,7 +1126,7 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
   if ("PCA" %in% pipeline_alacarte) {
     ## PCA analysis
     message("Running PCA")
-    run_PCA(betas, sample_sheet_df, formula, out_dir)
+    run_PCA(betas, sample_sheet_df, formula, out_dir, perplexity)
   }
 
   ## Calculating summary stats
