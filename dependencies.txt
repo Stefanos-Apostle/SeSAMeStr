@@ -1,0 +1,17 @@
+sesameData
+sesame 
+ggplot2 
+SummarizedExperiment 
+pals
+dplyr 
+grDevices
+pheatmap
+ggrepel
+gprofiler2
+tidyverse
+cellranger
+readr
+BiocParallel
+wheatmap
+Rtsne
+uwot
