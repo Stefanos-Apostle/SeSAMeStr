@@ -563,7 +563,7 @@ run_PCA <- function(betas, sample_sheet_df, formula, out_dir, perplexity) {
   save(tSNE_df, file = out_file)
 
   out_file <- paste(out_dir, "/PCA/UMAP_df.RData", sep = "")
-  UMAP_df <- calc_UMAP(betas, perplexity = perplexity)
+  UMAP_df <- calc_UMAP(betas)
   save(UMAP_df, file = out_file)
 
   message("Plotting PCs by Sample Sheet Condition...")
