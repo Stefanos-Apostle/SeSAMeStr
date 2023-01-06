@@ -56,3 +56,9 @@ SeSAMe_STREET(Idat_dir = "path_to/Idat_dir",
 ## Future Work
 
 This has been built primarily for the MM285 platform, but is prepared to be extended to other platforms as well. This will happen if a personal/lab project requires it or if there is of interest by others in this extension.
+
+## Cite
+
+Cite SeSAMeStr v1.0.0 by;
+
+Apostle, S., Fagnocchi, L., & Pospisilik, J. A. (2023). SeSAMeStr: An Automated Pipeline for SeSAMe Methylation Array Analysis (Version 1.0.0) [Computer software]. https://doi.org/10.5281/zenodo.7510575
