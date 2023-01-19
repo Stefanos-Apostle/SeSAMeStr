@@ -504,8 +504,12 @@ plot_tSNE <- function(tSNE_df, condition, sample_sheet_df) {
 #' @export
 calc_UMAP <- function(betas) {
   set.seed(1)
-  UMAP <- umap(t(betas))
-  UMAP_df <- as.data.frame(UMAP$layout)
+  nn <- ifelse(ncol(betas) < 15, ncol(betas)-1, 15)
+  if (nn < 15) {
+    message(paste("UMAP n_neighbors too high, adjusting to ", nn))
+  }
+  UMAP <- umap(t(betas), n_neighbors = nn)
+  UMAP_df <- as.data.frame(UMAP)
 
   return(UMAP_df)
 }
@@ -627,7 +631,7 @@ create_SE <-function(betas, sample_sheet_df, formula) {
   }
 
   se <- SummarizedExperiment(assays = list(betas = betas),
-                             colData = sample_sheet_df[match(colnames(betas), unlist(sample_sheet_df[, 2])), ])
+                             colData = sample_sheet_df[match(colnames(betas), unlist(sample_sheet_df[, 1])), ])
 
   cd = as.data.frame(colData(se)); rownames(cd) = NULL
   #cd
@@ -1096,8 +1100,8 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
   }
 
   ## sinking output to a log file
-  log_file <- paste(out_dir, "/SeSAMe_STREET_log.txt", sep = "")
-  sink(log_file, append = F)
+  #log_file <- paste(out_dir, "/SeSAMe_STREET_log.txt", sep = "")
+  #sink(log_file, append = F)
 
   ## unit test for output architecture
   test_output_architecture(out_dir)
