@@ -894,8 +894,8 @@ testEnrichment_DMLs <- function(test_result, CONDITION, LEVEL, out_dir, base_con
 
 #' @title Plot Test Enrichments for a custom set of local CpG databases
 #'
-#' @description Function to calculate enrichment for different SeSAMe CpG databases from DML CpGs
-#' @param custom_sets_path Path to directory of .RData files containing custom CpG sets
+#' @description Function to calculate enrichment for different SeSAMe CpG .RData databases from DML CpGs
+#' @param custom_set_paths Path to directory of .RData file(s) containing custom CpG sets
 #' @param test_result Test results of DML summary stats
 #' @param CONDITION Metavalue realted to colname of sample sheet
 #' @param LEVEL Which comparison of condition levels to use DML results from
@@ -905,15 +905,11 @@ testEnrichment_DMLs <- function(test_result, CONDITION, LEVEL, out_dir, base_con
 #' @examples
 #' testEnrichment_DMLs(test_result, "Group", "Treatment", "path/out_dir")
 #' @export
-test_enrichment_custom_sets <- function(custom_sets_path, test_result, CONDITION, LEVEL, out_dir, base_condition_level) {
+test_enrichment_custom_sets <- function(custom_set_paths, test_result, CONDITION, LEVEL, out_dir, base_condition_level) {
 
-
-  sets_files <- list.files(custom_sets_path)
-
-  for (rdf in sets_files[grep(".RData", sets_files)]) {
-    rdf_path = paste(custom_sets_path,rdf, sep = "/")
-    db_name = load(rdf_path)
-    load(rdf_path)
+  for (file in custom_set_paths) {
+    load(file, verbose = T)
+    db_name = load(file)
 
     for (db in db_name) {
       ## testing all CpGs together
@@ -948,7 +944,6 @@ test_enrichment_custom_sets <- function(custom_sets_path, test_result, CONDITION
       print(plot)
       dev.off()
     }
-
   }
 
 }
@@ -1103,11 +1098,12 @@ DMR_DMLs <- function(se, smry, CONDITION, LEVEL, out_dir, base_condition_level) 
 #' @param out_dir Path to output directory
 #' @param pval P value threshold for significant CpG DMLs
 #' @param effSize Effect size threshold for signficant CpG DMLs
+#' @param custom_set_paths Path to directory of .RData file(s) containing custom CpG sets
 #' @return Saving the updated test_result object now containing Up, Down, not-sig DML results for each comparison
 #' @examples
 #' DML_analysis(betas, sample_sheet_df, smry, ~Group, "path/out_dir")
 #' @export
-DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize, custom_sets_path=F) {
+DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize, custom_set_paths=F) {
 
   test_result <- summaryExtractTest(smry)
   test_result <- remove_NAs(test_result)
@@ -1181,11 +1177,12 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = 
 #' @param effSize Effect size threshold for signficant CpG DMLs
 #' @param pipeline_alacarte Option to choose which steps of the pipeline to run. Must include a selection of only the following; c("QC", "PCA", "DML")
 #' @param perplexity Value to be used for tSNE of beta values in run_PCA subassembly
+#' @param custom_set_paths Path to directory of .RData file(s) containing custom CpG sets
 #' @return All outputs in or a sub directory of the out_dir
 #' @examples
 #' SeSAMe_STREET("path/Idat_dir", "path/out_dir", "path/sample_sheet.xlsx", "TQCDPB", ~ Group, 16, NA)
 #' @export
-SeSAMeStr <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1, perplexity = 30, pipeline_alacarte = c("QC", "DimRed", "DML"), custom_sets_path = F) {
+SeSAMeStr <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1, perplexity = 30, pipeline_alacarte = c("QC", "DimRed", "DML"), custom_set_paths = F) {
 
   for (order in pipeline_alacarte) {
     if (length(pipeline_alacarte) == 0) {
@@ -1248,7 +1245,7 @@ SeSAMeStr <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, sub
 
     ## First pass of basic analysis on DML summary statistics
     message("Running DML analysis")
-    DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize, custom_sets_path = custom_sets_path)
+    DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize, custom_set_paths = custom_set_paths)
   }
 
   ## closing sink log
