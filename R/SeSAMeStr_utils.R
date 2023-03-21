@@ -384,7 +384,7 @@ PCA_variance_plot <- function(pca, out_dir) {
   names(prop_var) = c('sd', 'prop', 'cum')
   prop_var$num = 1:nrow(prop_var)
 
-  out_file <- paste(out_dir, "/PCA/Component_Variance.pdf", sep = "")
+  out_file <- paste(out_dir, "/DimRed/Component_Variance.pdf", sep = "")
 
   pdf(file = out_file)
 
@@ -543,7 +543,7 @@ plot_UMAP <- function(UMAP_df, condition, sample_sheet_df) {
 
 
 
-#' @title PCA Subassembly
+#' @title Dimensional Reduction Subassembly
 #'
 #' @description A function to run all PCA analysis
 #' @param betas Preprocessed beta values
@@ -555,22 +555,21 @@ plot_UMAP <- function(UMAP_df, condition, sample_sheet_df) {
 #' @examples
 #' run_PCA(betas, sample_sheet_df, ~ Group, "path/out_dir")
 #' @export
-run_PCA <- function(betas, sample_sheet_df, formula, out_dir, perplexity) {
+run_DimRed <- function(betas, sample_sheet_df, formula, out_dir, perplexity) {
 
   pca <- prcomp(t(betas))
 
-  message("Plotting PC proportion of variance...")
   PCA_variance_plot(pca, out_dir)
 
-  out_file <- paste(out_dir, "/PCA/tSNE_df.RData", sep = "")
+  out_file <- paste(out_dir, "/DimRed/tSNE_df.RData", sep = "")
   tSNE_df <- calc_tSNE(betas, perplexity = perplexity)
   save(tSNE_df, file = out_file)
 
-  out_file <- paste(out_dir, "/PCA/UMAP_df.RData", sep = "")
+  out_file <- paste(out_dir, "/DimRed/UMAP_df.RData", sep = "")
   UMAP_df <- calc_UMAP(betas)
   save(UMAP_df, file = out_file)
 
-  message("Plotting PCs by Sample Sheet Condition...")
+  message("Plotting DimReds by Sample Sheet Condition...")
   #conds <- strsplit(as.character(formula)[2], " + ")[[1]]
   conds <- all.vars(formula[[2]])
   for (i in conds) {
@@ -579,21 +578,21 @@ run_PCA <- function(betas, sample_sheet_df, formula, out_dir, perplexity) {
     test_condition_presence(i, sample_sheet_df)
 
     #pca plot
-    out_file <- paste(out_dir, "/PCA/PCA_", i, ".pdf", sep = "")
+    out_file <- paste(out_dir, "/DimRed/PCA_", i, ".pdf", sep = "")
     pdf(out_file)
     plot <- plot_PCA(pca, condition = i, sample_sheet_df)
     print(plot)
     dev.off()
 
     #tSNE plot
-    out_file <- paste(out_dir, "/PCA/tSNE_", i, ".pdf", sep = "")
+    out_file <- paste(out_dir, "/DimRed/tSNE_", i, ".pdf", sep = "")
     pdf(out_file)
     plot <- plot_tSNE(tSNE_df, condition = i, sample_sheet_df)
     print(plot)
     dev.off()
 
     #UMAP PLOT
-    out_file <- paste(out_dir, "/PCA/UMAP_", i, ".pdf", sep = "")
+    out_file <- paste(out_dir, "/DimRed/UMAP_", i, ".pdf", sep = "")
     pdf(out_file)
     plot <- plot_UMAP(UMAP_df, condition = i, sample_sheet_df)
     print(plot)
@@ -603,7 +602,7 @@ run_PCA <- function(betas, sample_sheet_df, formula, out_dir, perplexity) {
 
   ## saving PCA object
   message("Saving PCA object as RData...")
-  out_file <- paste(out_dir, "/PCA/PCA.RData", sep = "")
+  out_file <- paste(out_dir, "/DimRed/PCA.RData", sep = "")
   save(pca, file = out_file)
 
 }
@@ -737,11 +736,12 @@ condLEVEL_DMLs <- function(test_result, CONDITION, LEVEL, pval = 0.05, effSize =
 #' @param CONDITION Comparisons to be me made from the colnames of the sample sheet
 #' @param LEVEL Which level comparison of the condition DML are we looking at
 #' @param out_dir Path to output directory
+#' @param base_condition_level Name of level used to compare DML for condition
 #' @return Ggplot2 formatted volcano plot
 #' @examples
 #' volcano_plot(test_result, "Group", "Treatment", "path/out_dir")
 #' @export
-volcano_plot <- function(test_result, CONDITION, LEVEL, out_dir) {
+volcano_plot <- function(test_result, CONDITION, LEVEL, out_dir, base_condition_level) {
 
   x <- paste("Est_", CONDITION, LEVEL, sep = "")
   y <- paste("Pval_", CONDITION, LEVEL, sep = "")
@@ -750,14 +750,14 @@ volcano_plot <- function(test_result, CONDITION, LEVEL, out_dir) {
   plot <- ggplot(test_result %>% arrange(DML_colname), aes_string(x =x, y = sprintf("-log10(%s)", y))) + #y = -log10(y))) +
     geom_point(aes_string(color = DML_colname)) +
     theme_classic() +
-    ggtitle(paste(CONDITION, LEVEL, sep = "; ")) +
+    ggtitle(paste(CONDITION, "; ", LEVEL, " vs ", base_condition_level, sep = "")) +
     scale_color_manual(values = c("grey", "red", "blue")) +
     labs(color = "") +
     theme(legend.position = "right", aspect.ratio = 1, text = element_text(face = "bold", size = 15),
           axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
 
 
-  out_file <- paste(out_dir, "/DML/Volcano_plots/", CONDITION, "_", LEVEL, "_volcano.pdf", sep = "")
+  out_file <- paste(out_dir, "/DML/Volcano_plots/", CONDITION, "_", LEVEL, "_vs_", base_condition_level,"_volcano.pdf", sep = "")
   pdf(file = out_file)
   print(plot)
   dev.off()
@@ -773,11 +773,12 @@ volcano_plot <- function(test_result, CONDITION, LEVEL, out_dir) {
 #' @param CONDITION Metavalue realted to colname of sample sheet
 #' @param LEVEL Which comparison of condition levels to use DML results from
 #' @param out_dir Path to output directory
+#' @param base_condition_level Name of level used to compare DML for condition
 #' @return Pheatmap formatted heatmap of DML beta values across replicates colored by selected conditions.
 #' @examples
 #' heatmap_DMLs(betas, sample_sheet_df, test_result, "Group", "Treatment", "path/out_dir")
 #' @export
-heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, out_dir) {
+heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, out_dir, base_condition_level) {
 
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
   DML_CpGs <- test_result$Probe_ID[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
@@ -817,7 +818,7 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
 
 
     ## raw betas
-    out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_heatmap.pdf", sep = "")
+    out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_vs_", base_condition_level,"_heatmap.pdf", sep = "")
     pdf(out_file)
     plot <- pheatmap(t(DML_betas), color = hm_colors, annotation_row = mat_row, annotation_colors = ann_cols,
                      cluster_rows = T, cluster_cols = T, show_colnames = F, show_rownames = T, #cellwidth = .15, cellheight = 10,
@@ -827,7 +828,7 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
 
 
     ## z score betas
-    out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_zscore_heatmap.pdf", sep = "")
+    out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_vs_", base_condition_level,"_zscore_heatmap.pdf", sep = "")
     pdf(out_file)
     is.na(DML_betas) %>% table()
     plot <- pheatmap(t(MatVar(DML_betas)), annotation_row = mat_row, annotation_colors = ann_cols,
@@ -846,24 +847,113 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
 #' @param CONDITION Metavalue realted to colname of sample sheet
 #' @param LEVEL Which comparison of condition levels to use DML results from
 #' @param out_dir Path to output directory
+#' @param base_condition_level Name of level used to compare DML for condition
 #' @return Pdf of test enrichment results for CONDITION-LEVEL DML CpGs
 #' @examples
 #' testEnrichment_DMLs(test_result, "Group", "Treatment", "path/out_dir")
 #' @export
-testEnrichment_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
+testEnrichment_DMLs <- function(test_result, CONDITION, LEVEL, out_dir, base_condition_level) {
 
+  ## testing all CpGs together
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
   DML_CpGs <- test_result$Probe_ID[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
 
   tE_results <- testEnrichment(DML_CpGs)
 
-  out_file <- paste(out_dir, "/DML/testEnrichments/", CONDITION, "_", LEVEL, "_testEnrichment.pdf", sep = "")
+  out_file <- paste(out_dir, "/DML/testEnrichments/", CONDITION, "_", LEVEL,"_vs_", base_condition_level, "_testEnrichment_All.pdf", sep = "")
   pdf(out_file)
   plot <- KYCG_plotEnrichAll(tE_results)
   print(plot)
   dev.off()
 
+  ## testing only the hypermethylated CpGs
+  DML_up <- test_result$Probe_ID[which(test_result[[DML_colname]] == "Up")]
+  tE_up <- testEnrichment(DML_up)
+
+  out_file <- paste(out_dir, "/DML/testEnrichments/", CONDITION, "_", LEVEL,"_vs_", base_condition_level, "_testEnrichment_Up.pdf", sep = "")
+  pdf(out_file)
+  plot <- KYCG_plotEnrichAll(tE_up)
+  print(plot)
+  dev.off()
+
+  ## testing only the hypermethylated CpGs
+  DML_down <- test_result$Probe_ID[which(test_result[[DML_colname]] == "Down")]
+  tE_down <- testEnrichment(DML_down)
+
+  out_file <- paste(out_dir, "/DML/testEnrichments/", CONDITION, "_", LEVEL,"_vs_", base_condition_level, "_testEnrichment_Down.pdf", sep = "")
+  pdf(out_file)
+  plot <- KYCG_plotEnrichAll(tE_down)
+  print(plot)
+  dev.off()
+
+
 }
+
+
+
+
+#' @title Plot Test Enrichments for a custom set of local CpG databases
+#'
+#' @description Function to calculate enrichment for different SeSAMe CpG databases from DML CpGs
+#' @param custom_sets_path Path to directory of .RData files containing custom CpG sets
+#' @param test_result Test results of DML summary stats
+#' @param CONDITION Metavalue realted to colname of sample sheet
+#' @param LEVEL Which comparison of condition levels to use DML results from
+#' @param out_dir Path to output directory
+#' @param base_condition_level Name of level used to compare DML for condition
+#' @return Pdf of test enrichment results for CONDITION-LEVEL DML CpGs
+#' @examples
+#' testEnrichment_DMLs(test_result, "Group", "Treatment", "path/out_dir")
+#' @export
+test_enrichment_custom_sets <- function(custom_sets_path, test_result, CONDITION, LEVEL, out_dir, base_condition_level) {
+
+
+  sets_files <- list.files(custom_sets_path)
+
+  for (rdf in sets_files[grep(".RData", sets_files)]) {
+    rdf_path = paste(custom_sets_path,rdf, sep = "/")
+    db_name = load(rdf_path)
+    load(rdf_path)
+
+    for (db in db_name) {
+      ## testing all CpGs together
+      DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
+      DML_CpGs <- test_result$Probe_ID[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
+
+      tE_results <- testEnrichment(DML_CpGs, databases = get(db))
+
+      out_file <- paste(out_dir, "/DML/testEnrichments/custom_sets/",db, "_", CONDITION, "_", LEVEL,"_vs_", base_condition_level, "_testEnrichment_All.pdf", sep = "")
+      pdf(out_file)
+      plot <- KYCG_plotEnrichAll(tE_results)
+      print(plot)
+      dev.off()
+
+      ## testing only the hypermethylated CpGs
+      DML_up <- test_result$Probe_ID[which(test_result[[DML_colname]] == "Up")]
+      tE_up <- testEnrichment(DML_up, databases = get(db))
+
+      out_file <- paste(out_dir, "/DML/testEnrichments/custom_sets/", db, "_", CONDITION, "_", LEVEL,"_vs_", base_condition_level, "_testEnrichment_Up.pdf", sep = "")
+      pdf(out_file)
+      plot <- KYCG_plotEnrichAll(tE_up)
+      print(plot)
+      dev.off()
+
+      ## testing only the hypermethylated CpGs
+      DML_down <- test_result$Probe_ID[which(test_result[[DML_colname]] == "Down")]
+      tE_down <- testEnrichment(DML_down, databases = get(db))
+
+      out_file <- paste(out_dir, "/DML/testEnrichments/custom_sets/",db, "_", CONDITION, "_", LEVEL,"_vs_", base_condition_level, "_testEnrichment_Down.pdf", sep = "")
+      pdf(out_file)
+      plot <- KYCG_plotEnrichAll(tE_down)
+      print(plot)
+      dev.off()
+    }
+
+  }
+
+}
+
+
 
 #' @title GO Analysis Plot
 #'
@@ -912,11 +1002,12 @@ GO_plot <- function(gostres, num_to_plot = 5, plot_title = "Top 5 GO Terms per S
 #' @param CONDITION Metavalue realted to colname of sample sheet
 #' @param LEVEL Which comparison of condition levels to use DML results from
 #' @param out_dir Path to output directory
+#' @param base_condition_level Name of level used to compare DML for condition
 #' @return Saves a bar plot and Go results csv for up and down GO resepectively
 #' @examples
 #' GO_analysis_DMLs(test_result, "Group", "Treatment", "path/out_dir")
 #' @export
-GO_analysis_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
+GO_analysis_DMLs <- function(test_result, CONDITION, LEVEL, out_dir, base_condition_level) {
 
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
 
@@ -935,9 +1026,9 @@ GO_analysis_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
   if (is.null(gostres_up)) {
     print(paste("Hyper-Methylated CpG GO has no results for the following comparison:", DML_colname))
   }else{
-    up_title <- paste("Top 5 GO Terms per Source \n", CONDITION, "; ", LEVEL, " UP", sep = "")
+    up_title <- paste("Top 5 GO Terms per Source \n", CONDITION, "; ", LEVEL," vs ", base_condition_level, " UP", sep = "")
     plot_up <- GO_plot(gostres_up, plot_title = up_title)
-    up_plot_file <- paste(out_dir, "/DML/GO_Enrichment/", CONDITION,"_", LEVEL, "_GO_UP.pdf", sep = "")
+    up_plot_file <- paste(out_dir, "/DML/GO_Enrichment/", CONDITION,"_", LEVEL,"_vs_", base_condition_level, "_GO_UP.pdf", sep = "")
 
     pdf(file = up_plot_file)
 
@@ -946,7 +1037,7 @@ GO_analysis_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
     dev.off()
     #ggsave(up_plot_file, plot_up)
     ## saving dataframes for each GO run
-    up_outfile <- paste(out_dir, "/DML/GO_Enrichment/", CONDITION,"_", LEVEL, "_GO_UP.csv", sep = "")
+    up_outfile <- paste(out_dir, "/DML/GO_Enrichment/", CONDITION,"_", LEVEL, "_vs_", base_condition_level, "_GO_UP.csv", sep = "")
     write_csv(gostres_up$result, up_outfile)
   }
 
@@ -954,9 +1045,9 @@ GO_analysis_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
   if (is.null(gostres_down)) {
     print(paste("Hypo-Methylated CpG GO has no results for the following comparison:", DML_colname))
   }else{
-    down_title <- paste("Top 5 GO Terms per Source \n", CONDITION, "; ", LEVEL, " DOWN", sep = "")
+    down_title <- paste("Top 5 GO Terms per Source \n", CONDITION, "; ", LEVEL," vs ", base_condition_level, " DOWN", sep = "")
     plot_down <- GO_plot(gostres_down, plot_title = down_title)
-    down_plot_file <- paste(out_dir, "/DML/GO_Enrichment/", CONDITION,"_", LEVEL, "_GO_DOWN.pdf", sep = "")
+    down_plot_file <- paste(out_dir, "/DML/GO_Enrichment/", CONDITION,"_", LEVEL,"_vs_", base_condition_level, "_GO_DOWN.pdf", sep = "")
 
     pdf(file = down_plot_file)
 
@@ -965,7 +1056,7 @@ GO_analysis_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
     dev.off()
     #ggsave(down_plot_file, plot_down)
 
-    down_outfile <- paste(out_dir, "/DML/GO_Enrichment/", CONDITION, "_", LEVEL, "_GO_DOWN.csv", sep = "")
+    down_outfile <- paste(out_dir, "/DML/GO_Enrichment/", CONDITION, "_", LEVEL,"_vs_", base_condition_level, "_GO_DOWN.csv", sep = "")
     write_csv(gostres_down$result, down_outfile)
   }
 
@@ -980,18 +1071,19 @@ GO_analysis_DMLs <- function(test_result, CONDITION, LEVEL, out_dir) {
 #' @param CONDITION Metavalue realted to colname of sample sheet
 #' @param LEVEL Which comparison of condition levels to use DML results from
 #' @param out_dir Path to output directory
+#' @param base_condition_level Name of level used to compare DML for condition
 #' @return Writes a csv of the DMR results for each CONDITION-LEVEL contrast
 #' @examples
 #' DMR_DMLs(se, smry, "Group", "Treatment", "path/out_dir")
 #' @export
-DMR_DMLs <- function(se, smry, CONDITION, LEVEL, out_dir) {
+DMR_DMLs <- function(se, smry, CONDITION, LEVEL, out_dir, base_condition_level) {
 
   comp <- paste(CONDITION, LEVEL, sep = "")
 
   merged = DMR(se, smry, comp)
   sig_merged <- merged %>% dplyr::filter(Seg_Pval_adj < 0.05)
 
-  out_file <- paste(out_dir, "/DML/DMR_Analysis/", CONDITION, "_", LEVEL, "_DMR.csv", sep = "")
+  out_file <- paste(out_dir, "/DML/DMR_Analysis/", CONDITION, "_", LEVEL, "_vs_", base_condition_level, "_DMR.csv", sep = "")
   write_csv(sig_merged, file = out_file)
 
 }
@@ -1015,7 +1107,7 @@ DMR_DMLs <- function(se, smry, CONDITION, LEVEL, out_dir) {
 #' @examples
 #' DML_analysis(betas, sample_sheet_df, smry, ~Group, "path/out_dir")
 #' @export
-DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize) {
+DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize, custom_sets_path=F) {
 
   test_result <- summaryExtractTest(smry)
   test_result <- remove_NAs(test_result)
@@ -1044,19 +1136,24 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = 
       ls <- strsplit(LEVEL, " |-")[[1]]
       if (length(ls) > 0) {LEVEL <- paste(ls, collapse = ".")}
 
+      base_condition_level = lvs[1] ## used for naming titles and file scheme
+
       ## running analysis for each CONDITION-LEVEL Subsets
       cond_test_result <- condLEVEL_DMLs(test_result, CONDITION, LEVEL, pval = pval, effSize = effSize)
 
       if (length(cond_test_result) == 2 && class(cond_test_result[1]) == "character") {
         warning(paste("The following DML comparison not found in the test results; ", paste(cond_test_result, collapse = " "), sep = ""))
       }else{
-        volcano_plot(cond_test_result, CONDITION, LEVEL, out_dir)
-        heatmap_DMLs(betas, sample_sheet_df, cond_test_result, CONDITION, LEVEL, out_dir)
-        testEnrichment_DMLs(cond_test_result, CONDITION, LEVEL, out_dir)
-        GO_analysis_DMLs(cond_test_result, CONDITION, LEVEL, out_dir)
+        volcano_plot(cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
+        heatmap_DMLs(betas, sample_sheet_df, cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
+        testEnrichment_DMLs(cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
+        if (custom_sets_path != F){
+          test_enrichment_custom_sets(custom_sets_path, cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
+        }
+        GO_analysis_DMLs(cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
 
         se <- create_SE(betas, sample_sheet_df, formula)
-        DMR_DMLs(se, smry, CONDITION, LEVEL, out_dir)
+        DMR_DMLs(se, smry, CONDITION, LEVEL, out_dir, base_condition_level)
       }
     }
   }
@@ -1088,14 +1185,14 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = 
 #' @examples
 #' SeSAMe_STREET("path/Idat_dir", "path/out_dir", "path/sample_sheet.xlsx", "TQCDPB", ~ Group, 16, NA)
 #' @export
-SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1, perplexity = 30, pipeline_alacarte = c("QC", "PCA", "DML")) {
+SeSAMeStr <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores, subsample = NA, pval = 0.05, effSize = 0.1, perplexity = 30, pipeline_alacarte = c("QC", "DimRed", "DML"), custom_sets_path = F) {
 
   for (order in pipeline_alacarte) {
     if (length(pipeline_alacarte) == 0) {
-      stop("pipeline_alacarte must be atleast one step secected. Please select from the following menu; c('QC', 'PCA', 'DML')")
+      stop("pipeline_alacarte must be atleast one step secected. Please select from the following menu; c('QC', 'DimRed', 'DML')")
     }
-    if (!(order %in% c("QC", "PCA", "DML"))) {
-      stop(paste("The following value is not allowed in pipeline_alacarte; '", order,"'. Please select from the following menu; c('QC', 'PCA', 'DML')", sep = ""))
+    if (!(order %in% c("QC", "DimRed", "DML"))) {
+      stop(paste("The following value is not allowed in pipeline_alacarte; '", order,"'. Please select from the following menu; c('QC', 'DimRed', 'DML')", sep = ""))
     }
   }
 
@@ -1127,10 +1224,10 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
     save(betas, file = out_file)
   }
 
-  if ("PCA" %in% pipeline_alacarte) {
+  if ("DimRed" %in% pipeline_alacarte) {
     ## PCA analysis
-    message("Running PCA")
-    run_PCA(betas, sample_sheet_df, formula, out_dir, perplexity)
+    message("Running Dimensional Redcution")
+    run_DimRed(betas, sample_sheet_df, formula, out_dir, perplexity)
   }
 
   ## Calculating summary stats
@@ -1151,7 +1248,7 @@ SeSAMe_STREET <- function(Idat_dir, out_dir, sample_sheet, prep, formula, cores,
 
     ## First pass of basic analysis on DML summary statistics
     message("Running DML analysis")
-    DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize)
+    DML_analysis(betas, sample_sheet_df, smry, formula, out_dir, pval = pval, effSize = effSize, custom_sets_path = custom_sets_path)
   }
 
   ## closing sink log
