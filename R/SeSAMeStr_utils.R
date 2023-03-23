@@ -753,6 +753,8 @@ volcano_plot <- function(test_result, CONDITION, LEVEL, out_dir, base_condition_
     ggtitle(paste(CONDITION, "; ", LEVEL, " vs ", base_condition_level, sep = "")) +
     scale_color_manual(values = c("grey", "red", "blue")) +
     labs(color = "") +
+    xlab("Estimate") +
+    ylab("-log10(Pval)") +
     theme(legend.position = "right", aspect.ratio = 1, text = element_text(face = "bold", size = 15),
           axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
 
