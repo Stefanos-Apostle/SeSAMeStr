@@ -36,15 +36,16 @@ wget https://github.com/Stefanos-Apostle/SeSAMeStr/blob/main/SeSAMe_STREET_Sampl
 │   ├── GO_Enrichment
 │   ├── Heatmaps
 │   ├── testEnrichments
+│   │	└──custom_sets
 │   └── Volcano_plots
-├── PCA
+├── DimRed
 └── QC
 ```
 
 ## Step 4: Run the SeSAMe_STREET() Function
 
 ```
-SeSAMe_STREET(Idat_dir = "path_to/Idat_dir",
+SeSAMeStr(Idat_dir = "path_to/Idat_dir",
               out_dir = "path_to/output",
               sample_sheet = "path_to/SeSAMe_STREET_Sample_Sheet.xlsx",
               prep = "TQCDPB",
