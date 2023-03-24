@@ -75,7 +75,7 @@ test_output_architecture <- function(out_dir) {
 
   ## first level subdirs
   dir_list <- list.dirs(out_dir, full.names = F, recursive = F)
-  fl_dirs <- c("QC", "PCA", "DML")
+  fl_dirs <- c("QC", "DimRed", "DML")
   for (i in fl_dirs) {
     if (!(i %in% dir_list)) {
       stop(paste("You are missing the following directory in the output directory:", i))
