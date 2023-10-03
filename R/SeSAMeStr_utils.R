@@ -435,7 +435,7 @@ plot_PCA <- function(pca, condition, sample_sheet_df) {
     #geom_text_repel(data = pca_for_plotting, aes(x = PC1, y = PC2, label = sample), max.overlaps = Inf) +
     theme_classic() +
     theme(legend.position = "right", aspect.ratio = 1, text = element_text(face = "bold", size = 15),
-          axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
+          axis.line = element_line(linewidth  = 1), plot.title = element_text(hjust = .5))
   return(plot)
 
 }
@@ -489,7 +489,7 @@ plot_tSNE <- function(tSNE_df, condition, sample_sheet_df) {
     ylab("tSNE2") + xlab("tSNE1")+
     theme_classic() +
     theme(legend.position = "right", aspect.ratio = 1, text = element_text(face = "bold", size = 15),
-          axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
+          axis.line = element_line(linewidth = 1), plot.title = element_text(hjust = .5))
 
   return(tSNE_plot)
 }
@@ -532,7 +532,7 @@ plot_UMAP <- function(UMAP_df, condition, sample_sheet_df) {
     ylab("UMAP2") + xlab("UMAP1")+
     theme_classic() +
     theme(legend.position = "right", aspect.ratio = 1, text = element_text(face = "bold", size = 15),
-          axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
+          axis.line = element_line(linewidth = 1), plot.title = element_text(hjust = .5))
 
   return(UMAP_plot)
 }
@@ -747,8 +747,8 @@ volcano_plot <- function(test_result, CONDITION, LEVEL, out_dir, base_condition_
   y <- paste("Pval_", CONDITION, LEVEL, sep = "")
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
 
-  plot <- ggplot(test_result %>% arrange(DML_colname), aes_string(x =x, y = sprintf("-log10(%s)", y))) + #y = -log10(y))) +
-    geom_point(aes_string(color = DML_colname)) +
+  plot <- ggplot(test_result %>% arrange(DML_colname), aes(x =.data[[x]], y = -log10(.data[[y]]))) + #y = -log10(y))) +
+    geom_point(aes(color = .data[[DML_colname]])) +
     theme_classic() +
     ggtitle(paste(CONDITION, "; ", LEVEL, " vs ", base_condition_level, sep = "")) +
     scale_color_manual(values = c("grey", "red", "blue")) +
@@ -756,7 +756,7 @@ volcano_plot <- function(test_result, CONDITION, LEVEL, out_dir, base_condition_
     xlab("Estimate") +
     ylab("-log10(Pval)") +
     theme(legend.position = "right", aspect.ratio = 1, text = element_text(face = "bold", size = 15),
-          axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
+          axis.line = element_line(linewidth = 1), plot.title = element_text(hjust = .5))
 
 
   out_file <- paste(out_dir, "/DML/Volcano_plots/", CONDITION, "_", LEVEL, "_vs_", base_condition_level,"_volcano.pdf", sep = "")
@@ -785,8 +785,8 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
   DML_colname <- paste("DML", CONDITION, LEVEL, sep = "_")
   DML_CpGs <- test_result$Probe_ID[which(test_result[[DML_colname]] %in% c("Up", "Down"))]
 
-  if (length(DML_CpGs) == 0) {
-    message(paste("The following comparison has 0 DMLs; ", DML_colname, sep = ""))
+  if (length(DML_CpGs) <= 1) {
+    message(paste("The following comparison has ",  length(DML_CpGs),  " DMLs; ", DML_colname, sep = ""))
   }else{
     DML_betas <- betas[which(rownames(betas) %in% DML_CpGs), ]
 
@@ -816,8 +816,6 @@ heatmap_DMLs <- function(betas, sample_sheet_df, test_result, CONDITION, LEVEL, 
       cond_array <- c(cond_array, ta)
     }
     ann_cols <- list(Condition = cond_array)
-
-
 
     ## raw betas
     out_file <- paste(out_dir, "/DML/Heatmaps/", CONDITION, "_", LEVEL, "_vs_", base_condition_level,"_heatmap.pdf", sep = "")
@@ -986,7 +984,7 @@ GO_plot <- function(gostres, num_to_plot = 5, plot_title = "Top 5 GO Terms per S
     ylab(label = NULL) +
     theme_classic() +
     theme(legend.position = "none", text = element_text(face = "bold"),
-          axis.line = element_line(size = 1), plot.title = element_text(hjust = .5))
+          axis.line = element_line(linewidth = 1), plot.title = element_text(hjust = .5))
 
   return(plot)
 
@@ -1145,8 +1143,8 @@ DML_analysis <- function(betas, sample_sheet_df, smry, formula, out_dir, pval = 
         volcano_plot(cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
         heatmap_DMLs(betas, sample_sheet_df, cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
         testEnrichment_DMLs(cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
-        if (custom_sets_path != F){
-          test_enrichment_custom_sets(custom_sets_path, cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
+        if (custom_set_paths[1] != F){
+          test_enrichment_custom_sets(custom_set_paths, cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
         }
         GO_analysis_DMLs(cond_test_result, CONDITION, LEVEL, out_dir, base_condition_level)
 
